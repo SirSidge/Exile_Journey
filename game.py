@@ -3,6 +3,8 @@ import pygame
 from scripts.combat import Character
 
 pygame.init()
+player_sprite = pygame.image.load("sprites/Player_001.png")
+player_sprite = pygame.transform.scale(player_sprite, (64, 64))
 screen = pygame.display.set_mode((800, 600))
 running = True
 alive = True
@@ -54,6 +56,7 @@ while running:
                         update_log(f"{enemy.name} won!")
 
     clock.tick(60)
+    screen.blit(player_sprite, (100, 100))
     for i in range(len(combat_log)):
         screen.blit(font.render(combat_log[i], True, (255, 255, 255)), (0, (580 - (i * 25))))
     screen.blit(font.render(f"{character.name} HP: {character.hp}", True, (255, 255, 255)), (600, 10))
