@@ -1,5 +1,7 @@
 import pygame
 
+from pydub import AudioSegment
+from pydub.playback import play
 from scripts.combat import Character
 from scripts.character_creation import CharacterCreation
 from constants import *
@@ -11,10 +13,12 @@ running = True
 alive = True
 state = "menu"
 combat_log = []
+attack_sound = AudioSegment.from_wav("sounds/attack.wav")
 
 # Character creation
 char_creator = CharacterCreation()
-character = Character("Heinz", 100, 16, pygame.transform.scale(pygame.image.load("sprites/Player_001.png"), (64, 64)), [80, 100], attack_speed=1.2)
+user_ip = char_creator.name
+character = Character(char_creator.name or "Heinz", 100, 16, pygame.transform.scale(pygame.image.load("sprites/Player_001.png"), (64, 64)), [80, 100], attack_speed=1.2)
 enemy = Character("Wolf", 100, 14, pygame.transform.scale(pygame.image.load("sprites/Wolf_001.png"), (64, 64)), [200, 100], attack_speed=1.0)
 
 # Fonts
@@ -75,8 +79,10 @@ while running:
             if alive:
                 if event.type == player_timer and character.hp > 0:
                     update_log(f"{character.name} attacks {enemy.name} and deals {character.attack_target(enemy)} damage, leaving them with {enemy.hp} hp left.")
+                    play(attack_sound)
                 if event.type == enemy_timer and enemy.hp > 0:
                     update_log(f"{enemy.name} attacks {character.name} and deals {enemy.attack_target(character)} damage, leaving them with {character.hp} hp left.")
+                    play(attack_sound)
                 if character.hp <= 0 or enemy.hp <= 0:
                     alive = False
                     update_log("The game has ended.")
@@ -150,11 +156,14 @@ while running:
         draw_text(f"{character.name} HP: {character.hp}", small_font, (255, 255, 255), 70, 60)
         draw_text(f"{enemy.name} HP: {enemy.hp}", small_font, (255, 255, 255), 200, 60)
         for item in character.inventory.get_items():
-            draw_text(f"Inventory: {item.name}", small_font, (255, 255, 255), 70, 180)
+            draw_text(f"Inventory: {item.name}", small_font, (255, 255, 255), 70, (character.inventory.items.index(item) * 20 + 180))
+    
+    # Draw character scene
     elif state == "character_creation":
         screen.fill((0, 0, 80))
         pygame.draw.rect(screen, (100, 0, 100) if active else (0, 100, 0), text_box)
         draw_text(user_ip, font, (10, 10, 10), text_box.x + 5, text_box.y + 5)
+        draw_text("Enter Name (Press ENTER to save)", small_font, (255, 255, 255), 300, 140)
         screen.blit(character.sprite, (370, 260))
     elif state == "menu":
         screen.fill((0, 0, 50))
