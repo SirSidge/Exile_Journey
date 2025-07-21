@@ -3,6 +3,7 @@ import pygame
 from scripts.combat import Character
 from scripts.character_creation import CharacterCreation
 from constants import *
+from scripts.inventory import Inventory, Item
 
 pygame.init()
 screen = pygame.display.set_mode(SCREEN_SIZE)
@@ -39,6 +40,9 @@ player_timer = pygame.event.custom_type()
 enemy_timer = pygame.event.custom_type()
 pygame.time.set_timer(player_timer, int(1000 / character.attack_speed))
 pygame.time.set_timer(enemy_timer, int(1000 / enemy.attack_speed))
+
+# Inventory creation
+#inventory = Inventory()
 
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
@@ -78,8 +82,12 @@ while running:
                     update_log("The game has ended.")
                     if character.hp > 0:
                         update_log(f"{character.name} won!")
+                        wolf_pelt = Item("Wolf pelt", 10, 1) #item, value, weight
+                        character.inventory.add_item(wolf_pelt)
+                        update_log(f"{character.name} has collected a {wolf_pelt.name}")
                     if enemy.hp > 0:
                         update_log(f"{enemy.name} won!")
+                    
         elif state == "menu":
             if pygame.mouse.get_pressed()[0]:
                 mouse_pos = pygame.mouse.get_pos()
@@ -141,6 +149,8 @@ while running:
             draw_text(combat_log[i], font, (255, 255, 255), 0, 580 - i * 25)
         draw_text(f"{character.name} HP: {character.hp}", small_font, (255, 255, 255), 70, 60)
         draw_text(f"{enemy.name} HP: {enemy.hp}", small_font, (255, 255, 255), 200, 60)
+        for item in character.inventory.get_items():
+            draw_text(f"Inventory: {item.name}", small_font, (255, 255, 255), 70, 180)
     elif state == "character_creation":
         screen.fill((0, 0, 80))
         pygame.draw.rect(screen, (100, 0, 100) if active else (0, 100, 0), text_box)

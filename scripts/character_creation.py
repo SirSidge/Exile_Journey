@@ -4,7 +4,7 @@ from constants import *
 
 class CharacterCreation:
     def __init__(self):
-        self.name = ""
+        self.name = "Heinz"
         self.hp = 100
         self.att_dmg = 16
         self.attack_speed = 1.2
