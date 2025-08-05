@@ -1,19 +1,22 @@
 import pygame
 
-from pydub import AudioSegment
-from pydub.playback import play
 from scripts.combat import Character
 from scripts.character_creation import CharacterCreation
 from constants import *
 from scripts.inventory import Inventory, Item
+from scripts.main_menu import Main_Menu
 
 pygame.init()
+pygame.mixer.init(buffer=512)
 screen = pygame.display.set_mode(SCREEN_SIZE)
 running = True
 alive = True
 state = "menu"
-combat_log = []
-attack_sound = AudioSegment.from_wav("sounds/attack.wav")
+#combat_log = []
+attack_sound = pygame.mixer.Sound("sounds/attack.wav")
+
+# Scenes initialization
+main_menu = Main_Menu()
 
 # Character creation
 char_creator = CharacterCreation()
@@ -52,10 +55,10 @@ def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
 
-def update_log(text):
+"""def update_log(text):
     if len(combat_log) == 10:
         combat_log.pop(0)
-    combat_log.insert(0, text)
+    combat_log.insert(0, text)"""
 
 while running:
     dt = clock.tick(FRAMERATE) / 1000
@@ -64,47 +67,50 @@ while running:
             running = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                combat_log = []
+                Character.reset_combat_log(Character)
                 character.hp = 100
                 enemy.hp = 100
                 alive = True
                 if state == "battle":
-                    update_log("You have chosen to rematch!")
+                    Character.update_log(Character, "You have chosen to rematch!")
                 else:
                     state = "battle"
-                    update_log("Fight!")
+                    Character.update_log(Character, "Fight!")
             if event.key == pygame.K_q:
                 state = "menu"
         if state == "battle":
             if alive:
                 if event.type == player_timer and character.hp > 0:
-                    update_log(f"{character.name} attacks {enemy.name} and deals {character.attack_target(enemy)} damage, leaving them with {enemy.hp} hp left.")
-                    play(attack_sound)
+                    Character.update_log(Character, f"{character.name} attacks {enemy.name} and deals {character.attack_target(enemy)} damage, leaving them with {enemy.hp} hp left.")
+                    attack_sound.play()
                 if event.type == enemy_timer and enemy.hp > 0:
-                    update_log(f"{enemy.name} attacks {character.name} and deals {enemy.attack_target(character)} damage, leaving them with {character.hp} hp left.")
-                    play(attack_sound)
+                    Character.update_log(Character, f"{enemy.name} attacks {character.name} and deals {enemy.attack_target(character)} damage, leaving them with {character.hp} hp left.")
+                    attack_sound.play()
                 if character.hp <= 0 or enemy.hp <= 0:
                     alive = False
-                    update_log("The game has ended.")
+                    Character.update_log(Character, "The game has ended.")
                     if character.hp > 0:
-                        update_log(f"{character.name} won!")
+                        Character.update_log(Character, f"{character.name} won!")
                         wolf_pelt = Item("Wolf pelt", 10, 1) #item, value, weight
                         character.inventory.add_item(wolf_pelt)
-                        update_log(f"{character.name} has collected a {wolf_pelt.name}")
+                        Character.update_log(Character, f"{character.name} has collected a {wolf_pelt.name}")
                     if enemy.hp > 0:
-                        update_log(f"{enemy.name} won!")
+                        Character.update_log(Character, f"{enemy.name} won!")
                     
         elif state == "menu":
             if pygame.mouse.get_pressed()[0]:
+                main_menu.handle_events()
+                main_menu.render()
+                main_menu.update()
                 mouse_pos = pygame.mouse.get_pos()
                 if start_button.collidepoint(mouse_pos):
-                    combat_log = []
+                    #Character.reset_combat_log(Character)
                     character = char_creator.create_character()  # Use new character
                     state = "battle"
                     character.hp = 100
                     enemy.hp = 100
                     alive = True
-                    update_log("Fight!")
+                    #Character.update_log(Character, "Fight!")
                     pygame.time.set_timer(player_timer, int(1000 / character.attack_speed))
                     pygame.time.set_timer(enemy_timer, int(1000 / enemy.attack_speed))
                 elif name_button.collidepoint(mouse_pos):
@@ -151,8 +157,8 @@ while running:
                     screen.blit(entity.sprite, entity.base_pos)
             else:
                 screen.blit(entity.sprite, entity.base_pos)
-        for i in range(len(combat_log)):
-            draw_text(combat_log[i], font, (255, 255, 255), 0, 580 - i * 25)
+        for i in range(len(Character.combat_log)):
+            draw_text(Character.combat_log[i], font, (255, 255, 255), 0, 580 - i * 25)
         draw_text(f"{character.name} HP: {character.hp}", small_font, (255, 255, 255), 70, 60)
         draw_text(f"{enemy.name} HP: {enemy.hp}", small_font, (255, 255, 255), 200, 60)
         for item in character.inventory.get_items():
