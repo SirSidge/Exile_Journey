@@ -25,8 +25,14 @@ user_ip = char_creator.name
 character = Character(char_creator.name or "Heinz", 100, 16, pygame.transform.scale(pygame.image.load("sprites/Player_001.png"), (64, 64)), [80, 100], attack_speed=1.2)
 enemy = Character("Wolf", 100, 14, pygame.transform.scale(pygame.image.load("sprites/Wolf_001.png"), (64, 64)), [200, 100], attack_speed=1.0)
 
+# Pre-character timers
+player_timer = pygame.event.custom_type()
+enemy_timer = pygame.event.custom_type()
+pygame.time.set_timer(player_timer, int(1000 / character.attack_speed))
+pygame.time.set_timer(enemy_timer, int(1000 / enemy.attack_speed))
+
 # Game State init
-game_state = GameState(character)
+game_state = GameState(character, enemy, player_timer, enemy_timer)
 
 # Fonts
 font = pygame.font.Font(None, 30)
@@ -45,12 +51,6 @@ active = False
 
 # Time
 clock = pygame.time.Clock()
-
-# Pre-character timers
-player_timer = pygame.event.custom_type()
-enemy_timer = pygame.event.custom_type()
-pygame.time.set_timer(player_timer, int(1000 / character.attack_speed))
-pygame.time.set_timer(enemy_timer, int(1000 / enemy.attack_speed))
 
 # Inventory creation
 #inventory = Inventory()
@@ -104,20 +104,20 @@ while game_state.running:
         elif game_state.state == "menu":
             if pygame.mouse.get_pressed()[0]:
                 main_menu.handle_events(game_state)
-                main_menu.render()
-                main_menu.update()
-                mouse_pos = pygame.mouse.get_pos()
+                #main_menu.render()
+                #main_menu.update()
+                """mouse_pos = pygame.mouse.get_pos()
                 if start_button.collidepoint(mouse_pos):
                     #Character.reset_combat_log(Character)
                     #character = char_creator.create_character()  # Use new character
                     #game_state.state = "battle"
-                    character.hp = 100 #Move to Fight scene
-                    enemy.hp = 100 #Move to Fight scene
+                    #character.hp = 100 #Move to Fight scene
+                    #enemy.hp = 100 #Move to Fight scene
                     #game_state.alive = True
                     #Character.update_log(Character, "Fight!")
                     pygame.time.set_timer(player_timer, int(1000 / character.attack_speed)) #Move to Fight scene
                     pygame.time.set_timer(enemy_timer, int(1000 / enemy.attack_speed)) #Move to Fight scene
-                """elif name_button.collidepoint(mouse_pos):
+                elif name_button.collidepoint(mouse_pos):
                     game_state.state = "character_creation"
                 elif exit_button.collidepoint(mouse_pos):
                     game_state.running = False"""

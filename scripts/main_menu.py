@@ -22,6 +22,10 @@ class Main_Menu(Scene):
                 game_state.state = "battle"
                 game_state.alive = True
                 print("Start clicked.")
+                game_state.character.hp = 100
+                game_state.enemy.hp = 80
+                pygame.time.set_timer(game_state.player_timer, int(1000 / game_state.character.attack_speed)) #Move to Fight scene
+                pygame.time.set_timer(game_state.enemy_timer, int(1000 / game_state.enemy.attack_speed)) #Move to Fight scene
             elif name_button.collidepoint(mouse_pos):
                 game_state.state = "character_creation"
             elif exit_button.collidepoint(mouse_pos):
