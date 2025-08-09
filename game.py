@@ -1,23 +1,22 @@
 import pygame
 
-from scripts.combat import Character
+from scripts.character import Character
 from scripts.character_creation import CharacterCreation
 from constants import *
 from scripts.inventory import Inventory, Item
 from scripts.main_menu import Main_Menu
 from scripts.game_state import GameState
+from scripts.combat import Combat
 
 pygame.init()
 pygame.mixer.init(buffer=512)
 screen = pygame.display.set_mode(SCREEN_SIZE)
-#running = True
-#alive = True
-#state = "menu"
-#combat_log = []
 attack_sound = pygame.mixer.Sound("sounds/attack.wav")
 
 # Scenes initialization
 main_menu = Main_Menu()
+character_creation = CharacterCreation()
+combat = Combat()
 
 # Character creation
 char_creator = CharacterCreation()
@@ -25,44 +24,20 @@ user_ip = char_creator.name
 character = Character(char_creator.name or "Heinz", 100, 16, pygame.transform.scale(pygame.image.load("sprites/Player_001.png"), (64, 64)), [80, 100], attack_speed=1.2)
 enemy = Character("Wolf", 100, 14, pygame.transform.scale(pygame.image.load("sprites/Wolf_001.png"), (64, 64)), [200, 100], attack_speed=1.0)
 
-# Pre-character timers
-player_timer = pygame.event.custom_type()
-enemy_timer = pygame.event.custom_type()
-pygame.time.set_timer(player_timer, int(1000 / character.attack_speed))
-pygame.time.set_timer(enemy_timer, int(1000 / enemy.attack_speed))
-
 # Game State init
-game_state = GameState(character, enemy, player_timer, enemy_timer)
+game_state = GameState(character, enemy, screen, combat)
 
 # Fonts
 font = pygame.font.Font(None, 30)
 small_font = pygame.font.Font(None, 22)
 font_heading = pygame.font.Font(None, 40)
 
-# Buttons (in main menu)
-start_button = pygame.Rect(300, 280, 200, 50)
-exit_button = pygame.Rect(300, 360, 200, 50)
-name_button = pygame.Rect(300, 440, 200, 50)
-
-# Button (in character creation)
-user_ip = ""
-text_box = pygame.Rect(300, 180, 200, 50)
-active = False
-
 # Time
 clock = pygame.time.Clock()
-
-# Inventory creation
-#inventory = Inventory()
 
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
-
-"""def update_log(text):
-    if len(combat_log) == 10:
-        combat_log.pop(0)
-    combat_log.insert(0, text)"""
 
 while game_state.running:
     dt = clock.tick(FRAMERATE) / 1000
@@ -70,120 +45,37 @@ while game_state.running:
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             game_state.running = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                Character.reset_combat_log(Character)
-                game_state.character.hp = 100
-                enemy.hp = 100
-                game_state.alive = True
-                if game_state.state == "battle":
-                    Character.update_log(Character, "You have chosen to rematch!")
+            if event.key == pygame.K_SPACE and game_state.state != "character_creation":
+                game_state.next_scene = "combat"
+                game_state.change_scene()
+            if event.key == pygame.K_q and not character_creation.active:
+                if game_state.state == "menu":
+                    game_state.running = False
                 else:
-                    game_state.state = "battle"
-                    Character.update_log(Character, "Fight!")
-            if event.key == pygame.K_q:
-                game_state.state = "menu"
-        if game_state.state == "battle":
-            if game_state.alive:
-                if event.type == player_timer and character.hp > 0:
-                    Character.update_log(Character, f"{character.name} attacks {enemy.name} and deals {character.attack_target(enemy)} damage, leaving them with {enemy.hp} hp left.")
-                    attack_sound.play()
-                if event.type == enemy_timer and enemy.hp > 0:
-                    Character.update_log(Character, f"{enemy.name} attacks {character.name} and deals {enemy.attack_target(character)} damage, leaving them with {character.hp} hp left.")
-                    attack_sound.play()
-                if character.hp <= 0 or enemy.hp <= 0:
-                    game_state.alive = False
-                    Character.update_log(Character, "The game has ended.")
-                    if character.hp > 0:
-                        Character.update_log(Character, f"{character.name} won!")
-                        wolf_pelt = Item("Wolf pelt", 10, 1) #item, value, weight
-                        character.inventory.add_item(wolf_pelt)
-                        Character.update_log(Character, f"{character.name} has collected a {wolf_pelt.name}")
-                    if enemy.hp > 0:
-                        Character.update_log(Character, f"{enemy.name} won!")
+                    game_state.state = "menu"
+        if game_state.state == "combat":
+            combat.handle_events(game_state, event)
                     
         elif game_state.state == "menu":
             if pygame.mouse.get_pressed()[0]:
                 main_menu.handle_events(game_state)
-                #main_menu.render()
-                #main_menu.update()
-                """mouse_pos = pygame.mouse.get_pos()
-                if start_button.collidepoint(mouse_pos):
-                    #Character.reset_combat_log(Character)
-                    #character = char_creator.create_character()  # Use new character
-                    #game_state.state = "battle"
-                    #character.hp = 100 #Move to Fight scene
-                    #enemy.hp = 100 #Move to Fight scene
-                    #game_state.alive = True
-                    #Character.update_log(Character, "Fight!")
-                    pygame.time.set_timer(player_timer, int(1000 / character.attack_speed)) #Move to Fight scene
-                    pygame.time.set_timer(enemy_timer, int(1000 / enemy.attack_speed)) #Move to Fight scene
-                elif name_button.collidepoint(mouse_pos):
-                    game_state.state = "character_creation"
-                elif exit_button.collidepoint(mouse_pos):
-                    game_state.running = False"""
         elif game_state.state == "character_creation":
-            if pygame.mouse.get_pressed()[0]:
-                mouse_pos = pygame.mouse.get_pos()
-                if text_box.collidepoint(mouse_pos):
-                    active = True
-                else:
-                    active = False
-            if event.type == pygame.KEYDOWN and active:
-                user_ip = char_creator.update_name(event, user_ip)
-                if event.key == pygame.K_RETURN:
-                    game_state.state = "menu"
+            character_creation.handle_events(game_state, event)
+            character.name = character_creation.name
 
-    # Draw Battle scene
-    if game_state.state == "battle":
-        screen.fill((25, 25, 100))
-        for entity in [game_state.character, enemy]:
-            if entity.is_attacking:
-                entity.attack_anim -= 1
-                if entity.attack_anim > 40:
-                    offset = 10 * (1 - (entity.attack_anim - 40) / 20)
-                    if entity == game_state.character:
-                        screen.blit(entity.sprite, (entity.base_pos[0] + offset, entity.base_pos[1]))
-                    else:
-                        screen.blit(entity.sprite, (entity.base_pos[0] - offset, entity.base_pos[1]))
-                elif entity.attack_anim > 20:
-                    if entity == game_state.character:
-                        screen.blit(entity.sprite, (entity.base_pos[0] + 10, entity.base_pos[1]))
-                    else:
-                        screen.blit(entity.sprite, (entity.base_pos[0] - 10, entity.base_pos[1]))
-                elif entity.attack_anim > 0:
-                    offset = 10 * (entity.attack_anim / 20)
-                    if entity == game_state.character:
-                        screen.blit(entity.sprite, (entity.base_pos[0] + offset, entity.base_pos[1]))
-                    else:
-                        screen.blit(entity.sprite, (entity.base_pos[0] - offset, entity.base_pos[1]))
-                else:
-                    entity.is_attacking = False
-                    screen.blit(entity.sprite, entity.base_pos)
-            else:
-                screen.blit(entity.sprite, entity.base_pos)
-        for i in range(len(Character.combat_log)):
-            draw_text(Character.combat_log[i], font, (255, 255, 255), 0, 580 - i * 25)
-        draw_text(f"{game_state.character.name} HP: {game_state.character.hp}", small_font, (255, 255, 255), 70, 60)
-        draw_text(f"{enemy.name} HP: {enemy.hp}", small_font, (255, 255, 255), 200, 60)
-        for item in game_state.character.inventory.get_items():
-            draw_text(f"Inventory: {item.name}", small_font, (255, 255, 255), 70, (game_state.character.inventory.items.index(item) * 20 + 180))
-    
     # Draw character scene
+    if game_state.state == "combat":
+        combat.render(game_state)
     elif game_state.state == "character_creation":
-        screen.fill((0, 0, 80))
-        pygame.draw.rect(screen, (100, 0, 100) if active else (0, 100, 0), text_box)
-        draw_text(user_ip, font, (10, 10, 10), text_box.x + 5, text_box.y + 5)
-        draw_text("Enter Name (Press ENTER to save)", small_font, (255, 255, 255), 300, 140)
-        screen.blit(game_state.character.sprite, (370, 260))
+        character_creation.render(game_state)
     elif game_state.state == "menu":
-        screen.fill((0, 0, 50))
-        draw_text("Main Menu", font_heading, (255, 255, 255), 325, 240)
-        pygame.draw.rect(screen, (0, 100, 0), start_button)
-        pygame.draw.rect(screen, (100, 0, 0), exit_button)
-        pygame.draw.rect(screen, (100, 100, 100), name_button)
-        draw_text("Start", font, (255, 255, 255), 375, 297)
-        draw_text("Exit", font, (255, 255, 255), 379, 377)
-        draw_text("Name", font, (255, 255, 255), 372, 457)
+        main_menu.render(game_state)
 
     pygame.display.flip()
 pygame.quit()
+
+
+
+# Known bugs:
+# 1 - Name change only takes effect once game has been relaunched. (Completed)
+# 2 - Pressing space on the character creation screen immediately starts combat. (Completed)
