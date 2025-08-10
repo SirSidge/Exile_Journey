@@ -1,7 +1,6 @@
 import pygame
 
 from scripts.scenes import Scene
-from scripts.character import Character
 
 class Main_Menu(Scene):
     def __init__(self):
