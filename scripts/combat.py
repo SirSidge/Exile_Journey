@@ -20,8 +20,6 @@ class Combat(Scene):
                 self.update_log(f"{game_state.enemy.name} attacks {game_state.character.name} and deals {game_state.enemy.attack_target(game_state.character)} damage, leaving them with {game_state.character.hp} hp left.")
                 self.attack_sound.play()
             if game_state.character.hp <= 0 or game_state.enemy.hp <= 0:
-                game_state.alive = False
-                self.update_log("The game has ended.")
                 if game_state.character.hp > 0:
                     self.update_log(f"{game_state.character.name} won!")
                     wolf_pelt = Item("Wolf pelt", 10, 1) #item, value, weight
@@ -29,6 +27,8 @@ class Combat(Scene):
                     self.update_log(f"{game_state.character.name} has collected a {wolf_pelt.name}")
                 if game_state.enemy.hp > 0:
                     self.update_log(f"{game_state.enemy.name} won!")
+                self.update_log("The game has ended.")
+                game_state.alive = False
 
     def render(self, game_state):
         game_state.screen.fill((25, 25, 100))
